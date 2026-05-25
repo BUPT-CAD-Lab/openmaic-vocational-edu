@@ -29,7 +29,7 @@ Infer the course language directive by applying the decision rules from the syst
 
 {{availableImages}}
 
-### Web Search Results
+### Retrieved and External Reference Context
 
 {{researchContext}}
 

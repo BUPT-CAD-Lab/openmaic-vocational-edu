@@ -18,6 +18,7 @@ import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generatio
 import { createLogger } from '@/lib/logger';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromRequest } from '@/lib/server/resolve-model';
+import { getRagSnapshotContext } from '@/lib/server/knowledge/repository';
 
 const log = createLogger('Scene Content API');
 
@@ -37,6 +38,8 @@ export async function POST(req: NextRequest) {
       stageId,
       agents,
       languageDirective,
+      groundingContext,
+      ragSnapshotId,
     } = body as {
       outline: SceneOutline;
       allOutlines: SceneOutline[];
@@ -50,6 +53,8 @@ export async function POST(req: NextRequest) {
       stageId: string;
       agents?: AgentInfo[];
       languageDirective?: string;
+      groundingContext?: string;
+      ragSnapshotId?: string;
     };
 
     // Validate required fields
@@ -145,6 +150,12 @@ export async function POST(req: NextRequest) {
     log.info(
       `Generating content: "${effectiveOutline.title}" (${effectiveOutline.type}) [model=${modelString}]`,
     );
+    const storedGroundingContext = ragSnapshotId
+      ? await getRagSnapshotContext(ragSnapshotId)
+      : undefined;
+    const resolvedGroundingContext = [storedGroundingContext, groundingContext]
+      .filter(Boolean)
+      .join('\n\n');
 
     const content = await generateSceneContent(effectiveOutline, aiCall, {
       assignedImages,
@@ -155,6 +166,7 @@ export async function POST(req: NextRequest) {
       agents,
       languageDirective,
       thinkingConfig,
+      groundingContext: resolvedGroundingContext || undefined,
     });
 
     if (!content) {

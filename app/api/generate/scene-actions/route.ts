@@ -26,6 +26,7 @@ import type { SpeechAction } from '@/lib/types/action';
 import { createLogger } from '@/lib/logger';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromRequest } from '@/lib/server/resolve-model';
+import { getRagSnapshotContext } from '@/lib/server/knowledge/repository';
 
 const log = createLogger('Scene Actions API');
 
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
       previousSpeeches: incomingPreviousSpeeches,
       userProfile,
       languageDirective,
+      groundingContext,
+      ragSnapshotId,
     } = body as {
       outline: SceneOutline;
       allOutlines: SceneOutline[];
@@ -58,6 +61,8 @@ export async function POST(req: NextRequest) {
       previousSpeeches?: string[];
       userProfile?: string;
       languageDirective?: string;
+      groundingContext?: string;
+      ragSnapshotId?: string;
     };
 
     // Validate required fields
@@ -143,11 +148,19 @@ export async function POST(req: NextRequest) {
     // ── Generate actions ──
     log.info(`Generating actions: "${outline.title}" (${outline.type}) [model=${modelString}]`);
 
+    const storedGroundingContext = ragSnapshotId
+      ? await getRagSnapshotContext(ragSnapshotId)
+      : undefined;
+    const resolvedGroundingContext = [storedGroundingContext, groundingContext]
+      .filter(Boolean)
+      .join('\n\n');
+
     const actions = await generateSceneActions(outline, content, aiCall, {
       ctx,
       agents,
       userProfile,
       languageDirective,
+      groundingContext: resolvedGroundingContext || undefined,
     });
 
     log.info(`Generated ${actions.length} actions for: "${outline.title}"`);

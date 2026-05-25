@@ -29,6 +29,7 @@ import { nanoid } from 'nanoid';
 import type { Stage } from '@/lib/types/stage';
 import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generation';
 import { AgentRevealModal } from '@/components/agent/agent-reveal-modal';
+import { RagEvidencePanel } from '@/components/knowledge/rag-evidence-panel';
 import { createLogger } from '@/lib/logger';
 import { type GenerationSessionState, ALL_STEPS, getActiveSteps } from './types';
 import { StepVisualizer } from './components/visualizers';
@@ -291,7 +292,8 @@ function GenerationPreviewContent() {
           throw new Error(t('generation.pdfParseFailed'));
         }
 
-        let pdfText = parseResult.data.text as string;
+        const fullPdfText = parseResult.data.text as string;
+        let pdfText = fullPdfText;
 
         // Truncate if needed
         if (pdfText.length > MAX_PDF_CONTENT_CHARS) {
@@ -362,7 +364,7 @@ function GenerationPreviewContent() {
 
         // Truncation warnings
         const warnings: string[] = [];
-        if ((parseResult.data.text as string).length > MAX_PDF_CONTENT_CHARS) {
+        if (fullPdfText.length > MAX_PDF_CONTENT_CHARS) {
           warnings.push(t('generation.textTruncated', { n: MAX_PDF_CONTENT_CHARS }));
         }
         if (images.length > MAX_VISION_IMAGES) {
@@ -427,6 +429,8 @@ function GenerationPreviewContent() {
         activeSteps = getActiveSteps(currentSession);
       }
 
+      const groundingContext = currentSession.researchContext;
+
       // Load imageMapping early (needed for both outline and scene generation)
       let imageMapping: ImageMapping = {};
       if (currentSession.imageStorageIds && currentSession.imageStorageIds.length > 0) {
@@ -457,7 +461,14 @@ function GenerationPreviewContent() {
       let languageDirective = currentSession.languageDirective;
 
       const outlineStepIdx = activeSteps.findIndex((s) => s.id === 'outline');
-      setCurrentStepIndex(outlineStepIdx >= 0 ? outlineStepIdx : 0);
+      const knowledgeStepIdx = activeSteps.findIndex((s) => s.id === 'knowledge-retrieval');
+      setCurrentStepIndex(
+        currentSession.requirements.localKnowledge && knowledgeStepIdx >= 0
+          ? knowledgeStepIdx
+          : outlineStepIdx >= 0
+            ? outlineStepIdx
+            : 0,
+      );
       if (!outlines || outlines.length === 0) {
         log.debug('=== Generating outlines (SSE) ===');
         setStreamingOutlines([]);
@@ -466,6 +477,9 @@ function GenerationPreviewContent() {
         const outlineResult = await new Promise<{
           outlines: SceneOutline[];
           languageDirective: string;
+          ragSnapshotId?: string;
+          ragSources?: GenerationSessionState['ragSources'];
+          ragHits?: GenerationSessionState['ragHits'];
         }>((resolve, reject) => {
           const collected: SceneOutline[] = [];
           let directive: string | undefined;
@@ -479,7 +493,7 @@ function GenerationPreviewContent() {
                 pdfText: currentSession.pdfText,
                 pdfImages: currentSession.pdfImages,
                 imageMapping,
-                researchContext: currentSession.researchContext,
+                researchContext: groundingContext || undefined,
               }),
             ),
             signal,
@@ -511,9 +525,20 @@ function GenerationPreviewContent() {
                       if (!line.startsWith('data: ')) continue;
                       try {
                         const evt = JSON.parse(line.slice(6));
-                        if (evt.type === 'languageDirective') {
+                        if (evt.type === 'knowledge-retrieval') {
+                          const sessionWithEvidence: GenerationSessionState = {
+                            ...currentSession,
+                            ragSnapshotId: evt.ragSnapshotId,
+                            ragSources: evt.ragSources,
+                            ragHits: evt.ragHits,
+                          };
+                          persistSession(sessionWithEvidence);
+                          currentSession = sessionWithEvidence;
+                        } else if (evt.type === 'languageDirective') {
+                          if (outlineStepIdx >= 0) setCurrentStepIndex(outlineStepIdx);
                           directive = evt.data;
                         } else if (evt.type === 'outline') {
+                          if (outlineStepIdx >= 0) setCurrentStepIndex(outlineStepIdx);
                           collected.push(evt.data);
                           setStreamingOutlines([...collected]);
                         } else if (evt.type === 'retry') {
@@ -527,6 +552,9 @@ function GenerationPreviewContent() {
                             languageDirective:
                               directive ||
                               'Teach in the language that matches the user requirement.',
+                            ragSnapshotId: evt.ragSnapshotId,
+                            ragSources: evt.ragSources,
+                            ragHits: evt.ragHits,
                           });
                           return;
                         } else if (evt.type === 'error') {
@@ -570,6 +598,9 @@ function GenerationPreviewContent() {
           ...currentSession,
           sceneOutlines: outlines,
           languageDirective,
+          ragSnapshotId: outlineResult.ragSnapshotId,
+          ragSources: outlineResult.ragSources,
+          ragHits: outlineResult.ragHits,
           previewPhase: shouldReviewOutlines ? 'review' : 'outline-ready',
         };
         persistSession(updatedSession);
@@ -608,6 +639,7 @@ function GenerationPreviewContent() {
       if (languageDirective) {
         stage.languageDirective = languageDirective;
       }
+      stage.ragSnapshotId = currentSession.ragSnapshotId;
 
       // ── Agent generation (after outlines — uses languageDirective + outlines) ──
       const settings = useSettingsStore.getState();
@@ -819,6 +851,8 @@ function GenerationPreviewContent() {
             stageId: stage.id,
             agents,
             languageDirective,
+            groundingContext: groundingContext || undefined,
+            ragSnapshotId: currentSession.ragSnapshotId,
           }),
         ),
         signal,
@@ -851,6 +885,8 @@ function GenerationPreviewContent() {
             previousSpeeches: [],
             userProfile,
             languageDirective,
+            groundingContext: groundingContext || undefined,
+            ragSnapshotId: currentSession.ragSnapshotId,
           }),
         ),
         signal,
@@ -954,6 +990,8 @@ function GenerationPreviewContent() {
           agents,
           userProfile,
           languageDirective,
+          groundingContext: groundingContext || undefined,
+          ragSnapshotId: currentSession.ragSnapshotId,
         }),
       );
 
@@ -1194,6 +1232,17 @@ function GenerationPreviewContent() {
               </div>
             )}
 
+            {session.ragHits && session.ragHits.length > 0 && (
+              <RagEvidencePanel
+                evidence={{
+                  query: session.requirements.requirement,
+                  sources: session.ragSources || [],
+                  hits: session.ragHits,
+                }}
+                className="mx-auto max-w-2xl"
+              />
+            )}
+
             <OutlinesEditor
               outlines={editorOutlines}
               onChange={handleOutlinesChange}
@@ -1298,6 +1347,8 @@ function GenerationPreviewContent() {
                         stepId={activeStep.id}
                         outlines={session.sceneOutlines ?? streamingOutlines}
                         webSearchSources={webSearchSources}
+                        ragSources={session.ragSources}
+                        ragHits={session.ragHits}
                         onExpandOutline={
                           activeStep.id === 'outline' ? handleExpandStreamingOutline : undefined
                         }
@@ -1306,6 +1357,18 @@ function GenerationPreviewContent() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {session.ragHits && session.ragHits.length > 0 && (
+                <RagEvidencePanel
+                  compact
+                  evidence={{
+                    query: session.requirements.requirement,
+                    sources: session.ragSources || [],
+                    hits: session.ragHits,
+                  }}
+                  className="max-w-md"
+                />
+              )}
 
               {/* Text Content */}
               <div className="space-y-3 max-w-sm mx-auto">

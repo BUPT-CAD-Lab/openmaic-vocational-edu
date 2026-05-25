@@ -62,12 +62,14 @@ const log = createLogger('Home');
 const WEB_SEARCH_STORAGE_KEY = 'webSearchEnabled';
 const RECENT_OPEN_STORAGE_KEY = 'recentClassroomsOpen';
 const INTERACTIVE_MODE_STORAGE_KEY = 'interactiveModeEnabled';
+const LOCAL_KNOWLEDGE_STORAGE_KEY = 'localKnowledgeEnabled';
 
 interface FormState {
   pdfFile: File | null;
   requirement: string;
   webSearch: boolean;
   interactiveMode: boolean;
+  localKnowledge: boolean;
 }
 
 const initialFormState: FormState = {
@@ -75,6 +77,7 @@ const initialFormState: FormState = {
   requirement: '',
   webSearch: false,
   interactiveMode: false,
+  localKnowledge: false,
 };
 
 function HomePage() {
@@ -118,9 +121,11 @@ function HomePage() {
     try {
       const savedWebSearch = localStorage.getItem(WEB_SEARCH_STORAGE_KEY);
       const savedInteractiveMode = localStorage.getItem(INTERACTIVE_MODE_STORAGE_KEY);
+      const savedLocalKnowledge = localStorage.getItem(LOCAL_KNOWLEDGE_STORAGE_KEY);
       const updates: Partial<FormState> = {};
       if (savedWebSearch === 'true') updates.webSearch = true;
       if (savedInteractiveMode === 'true') updates.interactiveMode = true;
+      if (savedLocalKnowledge === 'true') updates.localKnowledge = true;
       if (Object.keys(updates).length > 0) {
         setForm((prev) => ({ ...prev, ...updates }));
       }
@@ -257,6 +262,8 @@ function HomePage() {
       if (field === 'webSearch') localStorage.setItem(WEB_SEARCH_STORAGE_KEY, String(value));
       if (field === 'interactiveMode')
         localStorage.setItem(INTERACTIVE_MODE_STORAGE_KEY, String(value));
+      if (field === 'localKnowledge')
+        localStorage.setItem(LOCAL_KNOWLEDGE_STORAGE_KEY, String(value));
       if (field === 'requirement') updateRequirementCache(value as string);
     } catch {
       /* ignore */
@@ -283,6 +290,7 @@ function HomePage() {
         userBio: userProfile.bio || undefined,
         webSearch: form.webSearch || undefined,
         interactiveMode: form.interactiveMode,
+        localKnowledge: form.localKnowledge || undefined,
       };
 
       let pdfStorageKey: string | undefined;
@@ -528,6 +536,8 @@ function HomePage() {
                 <GenerationToolbar
                   webSearch={form.webSearch}
                   onWebSearchChange={(v) => updateForm('webSearch', v)}
+                  localKnowledge={form.localKnowledge}
+                  onLocalKnowledgeChange={(v) => updateForm('localKnowledge', v)}
                   onSettingsOpen={(section) => {
                     setSettingsSection(section);
                     setSettingsOpen(true);

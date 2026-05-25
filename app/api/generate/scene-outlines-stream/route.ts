@@ -6,6 +6,7 @@
  * so the frontend can display them incrementally.
  *
  * SSE events:
+ *   { type: 'knowledge-retrieval', ragSnapshotId: string, ragSources: RagSource[], ragHits: RagHit[] }
  *   { type: 'languageDirective', data: string }
  *   { type: 'outline', data: SceneOutline, index: number }
  *   { type: 'done', outlines: SceneOutline[], languageDirective: string }
@@ -35,6 +36,7 @@ import type {
 import { apiError } from '@/lib/server/api-response';
 import { createLogger } from '@/lib/logger';
 import { resolveModelFromRequest } from '@/lib/server/resolve-model';
+import { retrieveKnowledgeSnapshot } from '@/lib/server/knowledge/repository';
 const log = createLogger('Outlines Stream');
 
 export const maxDuration = 300;
@@ -154,6 +156,12 @@ export async function POST(req: NextRequest) {
       agents?: AgentInfo[];
     };
     requirementSnippet = requirements?.requirement?.substring(0, 60);
+    const ragSnapshot = requirements.localKnowledge
+      ? await retrieveKnowledgeSnapshot(requirements.requirement)
+      : undefined;
+    const combinedReferenceContext = [ragSnapshot?.context, researchContext]
+      .filter(Boolean)
+      .join('\n\n');
 
     // Build user profile string for language inference context
     const userProfileText =
@@ -213,7 +221,7 @@ export async function POST(req: NextRequest) {
       requirement: requirements.requirement,
       pdfContent: pdfText ? pdfText.substring(0, MAX_PDF_CONTENT_CHARS) : 'None',
       availableImages: availableImagesText,
-      researchContext: researchContext || 'None',
+      researchContext: combinedReferenceContext || 'None',
       hasSourceImages,
       imageEnabled: imageGenerationEnabled,
       videoEnabled: videoGenerationEnabled,
@@ -258,6 +266,15 @@ export async function POST(req: NextRequest) {
 
         try {
           startHeartbeat();
+          if (ragSnapshot) {
+            const retrievalEvent = JSON.stringify({
+              type: 'knowledge-retrieval',
+              ragSnapshotId: ragSnapshot.id,
+              ragSources: ragSnapshot.sources,
+              ragHits: ragSnapshot.hits,
+            });
+            controller.enqueue(encoder.encode(`data: ${retrievalEvent}\n\n`));
+          }
 
           const streamParams = visionImages?.length
             ? {
@@ -381,6 +398,9 @@ export async function POST(req: NextRequest) {
               type: 'done',
               outlines: uniquifiedOutlines,
               languageDirective: languageDirective || DEFAULT_LANGUAGE_DIRECTIVE,
+              ragSnapshotId: ragSnapshot?.id,
+              ragSources: ragSnapshot?.sources,
+              ragHits: ragSnapshot?.hits,
             });
             controller.enqueue(encoder.encode(`data: ${doneEvent}\n\n`));
           } else {

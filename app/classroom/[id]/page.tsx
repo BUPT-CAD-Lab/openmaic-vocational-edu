@@ -164,6 +164,8 @@ export default function ClassroomDetailPage() {
           agents: params.agents,
           userProfile: params.userProfile,
           languageDirective: params.languageDirective || stage.languageDirective,
+          groundingContext: params.groundingContext,
+          ragSnapshotId: params.ragSnapshotId,
         });
       });
     } else if (outlines.length > 0 && stage) {

@@ -42,6 +42,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files
 .env*
@@ -68,6 +69,23 @@ next-env.d.ts
 # generated data
 /data
 /logs
+/output
+/uploads
+/storage
+/postgres-data
+/pgdata
+
+# local database and knowledge-base exports
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.gz
+
+# local caches and temporary files
+/.cache
+/tmp
 
 # docs
 /docs

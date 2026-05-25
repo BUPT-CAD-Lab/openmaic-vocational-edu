@@ -52,6 +52,7 @@ export interface UserRequirements {
   userBio?: string; // Student background for personalization
   webSearch?: boolean; // Enable web search for richer context
   interactiveMode?: boolean; // Enable Interactive Mode for interactive-first generation
+  localKnowledge?: boolean; // Retrieve PostgreSQL/pgvector-backed reference excerpts before generation
 }
 
 // ==================== Stage 1 Output: Scene Outlines (Simplified) ====================

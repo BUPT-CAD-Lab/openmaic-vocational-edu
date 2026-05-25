@@ -48,6 +48,7 @@ export function Stage({
 }) {
   const { t } = useI18n();
   const {
+    stage,
     mode,
     getCurrentScene,
     scenes,
@@ -1021,6 +1022,7 @@ export function Stage({
                 ? () => onRetryOutline(generatingOutlines[0].id)
                 : undefined
             }
+            ragSnapshotId={stage?.ragSnapshotId}
           />
         </div>
 
