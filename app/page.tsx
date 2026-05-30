@@ -56,6 +56,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDraftCache } from '@/lib/hooks/use-draft-cache';
 import { SpeechButton } from '@/components/audio/speech-button';
 import { useImportClassroom } from '@/lib/import/use-import-classroom';
+import { readStoredRagRetrievalConfig } from '@/lib/rag/config';
 
 const log = createLogger('Home');
 
@@ -291,6 +292,7 @@ function HomePage() {
         webSearch: form.webSearch || undefined,
         interactiveMode: form.interactiveMode,
         localKnowledge: form.localKnowledge || undefined,
+        ragConfig: form.localKnowledge ? readStoredRagRetrievalConfig(localStorage) : undefined,
       };
 
       let pdfStorageKey: string | undefined;

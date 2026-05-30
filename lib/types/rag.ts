@@ -1,3 +1,9 @@
+export interface RagRetrievalConfig {
+  topK: number;
+  minSimilarity: number;
+  maxContextChars: number;
+}
+
 export interface RagHit {
   documentId: string;
   documentName: string;
@@ -16,6 +22,8 @@ export interface RagSource {
 export interface RagEvidence {
   id: string;
   query: string;
+  config: RagRetrievalConfig;
+  selectionConfirmed: boolean;
   hits: RagHit[];
   sources: RagSource[];
 }

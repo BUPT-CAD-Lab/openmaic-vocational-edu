@@ -9,6 +9,7 @@ import {
   Database,
   FileText,
   Loader2,
+  SlidersHorizontal,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -108,9 +109,17 @@ export default function KnowledgeBasePage() {
             <ArrowLeft className="size-4" />
             返回课堂生成
           </Link>
-          <div className="inline-flex items-center gap-2 text-sm font-medium">
-            <Database className="size-4" />
-            材料知识库
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/knowledge-base/settings">
+                <SlidersHorizontal className="size-4" />
+                检索参数
+              </Link>
+            </Button>
+            <div className="hidden items-center gap-2 text-sm font-medium sm:inline-flex">
+              <Database className="size-4" />
+              材料知识库
+            </div>
           </div>
         </div>
       </header>

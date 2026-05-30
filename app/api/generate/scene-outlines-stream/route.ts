@@ -36,7 +36,8 @@ import type {
 import { apiError } from '@/lib/server/api-response';
 import { createLogger } from '@/lib/logger';
 import { resolveModelFromRequest } from '@/lib/server/resolve-model';
-import { retrieveKnowledgeSnapshot } from '@/lib/server/knowledge/repository';
+import { getRagSnapshotContext, getRagSnapshotEvidence } from '@/lib/server/knowledge/repository';
+import type { RagSnapshot } from '@/lib/server/knowledge/repository';
 const log = createLogger('Outlines Stream');
 
 export const maxDuration = 300;
@@ -147,18 +148,41 @@ export async function POST(req: NextRequest) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Requirements are required');
     }
 
-    const { requirements, pdfText, pdfImages, imageMapping, researchContext, agents } = body as {
+    const {
+      requirements,
+      pdfText,
+      pdfImages,
+      imageMapping,
+      researchContext,
+      agents,
+      ragSnapshotId,
+    } = body as {
       requirements: UserRequirements;
       pdfText?: string;
       pdfImages?: PdfImage[];
       imageMapping?: ImageMapping;
       researchContext?: string;
       agents?: AgentInfo[];
+      ragSnapshotId?: string;
     };
     requirementSnippet = requirements?.requirement?.substring(0, 60);
-    const ragSnapshot = requirements.localKnowledge
-      ? await retrieveKnowledgeSnapshot(requirements.requirement)
-      : undefined;
+    let ragSnapshot: RagSnapshot | undefined;
+    if (requirements.localKnowledge && ragSnapshotId) {
+      const evidence = await getRagSnapshotEvidence(ragSnapshotId);
+      const context = await getRagSnapshotContext(ragSnapshotId);
+      if (!evidence || !context || !evidence.selectionConfirmed) {
+        return apiError('INVALID_REQUEST', 400, 'Confirm selected knowledge excerpts first');
+      }
+      ragSnapshot = {
+        id: evidence.id,
+        context,
+        config: evidence.config,
+        hits: evidence.hits,
+        sources: evidence.sources,
+      };
+    } else if (requirements.localKnowledge) {
+      return apiError('INVALID_REQUEST', 400, 'Select knowledge excerpts before generation');
+    }
     const combinedReferenceContext = [ragSnapshot?.context, researchContext]
       .filter(Boolean)
       .join('\n\n');
