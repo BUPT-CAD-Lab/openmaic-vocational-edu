@@ -26,7 +26,12 @@ export interface GenerationSessionState {
   imageMapping?: ImageMapping;
   sceneOutlines?: SceneOutline[] | null;
   currentStep: 'generating' | 'complete';
-  previewPhase?: 'preparing' | 'outline-ready' | 'review' | 'generating-content';
+  previewPhase?:
+    | 'preparing'
+    | 'retrieval-review'
+    | 'outline-ready'
+    | 'review'
+    | 'generating-content';
   // PDF deferred parsing fields
   pdfStorageKey?: string;
   pdfFileName?: string;
@@ -39,6 +44,7 @@ export interface GenerationSessionState {
   ragSnapshotId?: string;
   ragSources?: RagSource[];
   ragHits?: RagHit[];
+  ragSelectionConfirmed?: boolean;
   // Language directive inferred from outline generation
   languageDirective?: string;
 }

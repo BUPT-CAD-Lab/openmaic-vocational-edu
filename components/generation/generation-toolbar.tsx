@@ -13,6 +13,7 @@ import {
   Search,
   Library,
   Database,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -356,6 +357,13 @@ export function GenerationToolbar({
             >
               <Database className="size-3.5" />
               {t('toolbar.manageKnowledge')}
+            </Link>
+            <Link
+              href="/knowledge-base/settings"
+              className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-border text-xs font-medium transition-colors hover:bg-muted"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              配置检索参数
             </Link>
           </PopoverContent>
         </Popover>

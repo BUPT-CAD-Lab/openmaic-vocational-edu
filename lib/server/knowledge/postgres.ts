@@ -83,10 +83,20 @@ async function initializeKnowledgeSchema(): Promise<void> {
         id text PRIMARY KEY,
         workspace_id text NOT NULL,
         query_text text NOT NULL,
+        retrieval_config jsonb NOT NULL DEFAULT '{}'::jsonb,
+        selection_confirmed boolean NOT NULL DEFAULT true,
         retrieved_chunks jsonb NOT NULL,
         rendered_context text NOT NULL,
         created_at timestamptz NOT NULL DEFAULT now()
       )
+    `);
+    await client.query(`
+      ALTER TABLE generation_rag_snapshots
+      ADD COLUMN IF NOT EXISTS retrieval_config jsonb NOT NULL DEFAULT '{}'::jsonb
+    `);
+    await client.query(`
+      ALTER TABLE generation_rag_snapshots
+      ADD COLUMN IF NOT EXISTS selection_confirmed boolean NOT NULL DEFAULT true
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS knowledge_chunks_workspace_document_idx

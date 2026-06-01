@@ -4,7 +4,8 @@ import { Database, FileText } from 'lucide-react';
 import type { RagEvidence, RagHit } from '@/lib/types/rag';
 import { cn } from '@/lib/utils';
 
-type EvidenceData = Pick<RagEvidence, 'query' | 'hits' | 'sources'>;
+type EvidenceData = Pick<RagEvidence, 'query' | 'hits' | 'sources'> &
+  Partial<Pick<RagEvidence, 'config'>>;
 
 export function RagEvidencePanel({
   evidence,
@@ -33,9 +34,18 @@ export function RagEvidencePanel({
         </span>
       </div>
       {!compact && evidence.query && (
-        <p className="mb-4 text-xs text-muted-foreground">
-          检索问题：<span className="text-foreground">{evidence.query}</span>
-        </p>
+        <div className="mb-4 space-y-2 text-xs text-muted-foreground">
+          <p>
+            检索问题：<span className="text-foreground">{evidence.query}</span>
+          </p>
+          {evidence.config && (
+            <p>
+              参数：Top-K {evidence.config.topK} / 最低相似度{' '}
+              {(evidence.config.minSimilarity * 100).toFixed(0)}% / 上下文上限{' '}
+              {evidence.config.maxContextChars.toLocaleString()} 字符
+            </p>
+          )}
+        </div>
       )}
       <div className={cn('space-y-2 overflow-y-auto', compact ? 'max-h-40' : 'max-h-[55vh]')}>
         {evidence.hits.map((hit) => (

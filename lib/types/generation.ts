@@ -7,6 +7,7 @@
 
 import type { ActionType } from './action';
 import type { MediaGenerationRequest } from '@/lib/media/types';
+import type { RagRetrievalConfig } from './rag';
 
 // ==================== PDF Image Types ====================
 
@@ -52,7 +53,9 @@ export interface UserRequirements {
   userBio?: string; // Student background for personalization
   webSearch?: boolean; // Enable web search for richer context
   interactiveMode?: boolean; // Enable Interactive Mode for interactive-first generation
+  taskEngineMode?: boolean; // Enable vocational task-engine generation path
   localKnowledge?: boolean; // Retrieve PostgreSQL/pgvector-backed reference excerpts before generation
+  ragConfig?: RagRetrievalConfig; // Retrieval controls applied when local knowledge is enabled
 }
 
 // ==================== Stage 1 Output: Scene Outlines (Simplified) ====================
@@ -73,6 +76,12 @@ export interface WidgetOutline {
   visualizationType?: 'molecular' | 'solar' | 'anatomy' | 'geometry' | 'physics' | 'custom'; // visualization3d
   objects?: string[]; // visualization3d
   interactions?: string[]; // visualization3d
+  procedureType?: 'repair' | 'assembly' | 'inspection' | 'operation' | 'custom'; // procedural-skill
+  task?: string; // procedural-skill - task to perform
+  tools?: string[]; // procedural-skill - tools or materials involved
+  steps?: string[]; // procedural-skill - ordered procedure steps
+  successCriteria?: string[]; // procedural-skill - checks for completion
+  errorConsequences?: string[]; // procedural-skill - consequences for unsafe or incorrect actions
   challenge?: string; // game - description of what player does
   playerControls?: string[]; // game - what player controls
   nodeCount?: number; // diagram - approximate node count
