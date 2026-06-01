@@ -1132,6 +1132,22 @@ async function generateWidgetContent(
       };
       break;
 
+    case 'procedural-skill':
+      promptId = PROMPT_IDS.PROCEDURAL_SKILL_CONTENT;
+      variables = {
+        title: outline.title,
+        procedureType: widgetOutline.procedureType || 'custom',
+        task: widgetOutline.task || widgetOutline.concept || outline.title,
+        description: outline.description,
+        keyPoints: (outline.keyPoints || []).join('\n'),
+        tools: widgetOutline.tools || [],
+        steps: widgetOutline.steps || [],
+        successCriteria: widgetOutline.successCriteria || [],
+        languageDirective: languageDirective || '',
+        groundingContext: groundingContext || '',
+      };
+      break;
+
     default:
       log.warn(`Unknown widget type: ${widgetType}`);
       return null;
@@ -1144,7 +1160,11 @@ async function generateWidgetContent(
   }
 
   log.info(`Generating ${widgetType} widget for: ${outline.title}`);
-  const response = await aiCall(prompts.system, prompts.user);
+  const response = await aiCall(prompts.system, prompts.user, undefined, {
+    taskType: 'widget-content',
+    promptId,
+    widgetType,
+  });
   const html = extractHtml(response);
 
   if (!html) {
@@ -1220,7 +1240,11 @@ async function generateWidgetTeacherActions(
   if (!prompts) return undefined;
 
   try {
-    const response = await aiCall(prompts.system, prompts.user);
+    const response = await aiCall(prompts.system, prompts.user, undefined, {
+      taskType: 'widget-teacher-actions',
+      promptId: PROMPT_IDS.WIDGET_TEACHER_ACTIONS,
+      widgetType,
+    });
     const parsed = parseJsonResponse<{ actions: TeacherAction[] }>(response);
     return parsed?.actions;
   } catch {

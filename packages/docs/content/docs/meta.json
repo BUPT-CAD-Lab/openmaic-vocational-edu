@@ -1,0 +1,12 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "getting-started",
+    "configuration",
+    "supported-models",
+    "deployment",
+    "voxcpm",
+    "local-knowledge-rag",
+    "vocational-task-engine"
+  ]
+}
