@@ -1,0 +1,89 @@
+---
+title: RAG and Vocational Widgets
+description: Feature overview for local knowledge grounding and vocational procedural-skill widgets.
+---
+
+OpenMAIC supports two complementary feature areas for source-grounded and practice-oriented classrooms:
+
+- **RAG / Local Knowledge** grounds generation in uploaded reference material.
+- **Vocational widgets** create procedural, task-oriented interactions for hands-on training scenarios.
+
+These features can be reviewed independently. RAG focuses on evidence and source grounding; vocational widgets focus on operational practice and learner decisions.
+
+## RAG / Local Knowledge
+
+The RAG module adds a local knowledge workflow for classrooms that must follow uploaded manuals, courseware, standards, procedures, or institution-specific material.
+
+### What it does
+
+- Maintains a server-side knowledge base for indexed documents.
+- Chunks reference material and embeds it for vector retrieval.
+- Lets users enable **Local Knowledge** during classroom generation.
+- Retrieves relevant excerpts before generation continues.
+- Lets users review and confirm the excerpts that will ground the generated classroom.
+- Saves a retrieval evidence snapshot so the generated classroom can expose which sources were used.
+
+### Generation flow
+
+1. Upload or index reference documents in the knowledge base.
+2. Enable **Local Knowledge** before generating a classroom.
+3. Start generation from a topic, requirement, or uploaded input.
+4. Review the retrieved excerpts in the generation preview step.
+5. Continue generation after confirming the excerpts.
+6. Inspect the evidence panel in the generated classroom when source traceability is needed.
+
+### Where retrieved context is used
+
+Confirmed excerpts can be injected into the generation pipeline so the model can follow source-specific terminology, procedures, constraints, and completion criteria. This is useful for:
+
+- course outlines that must match local materials;
+- scene content that should avoid conflicting facts;
+- widgets that need source-specific steps or parameters;
+- teacher actions that should reference the same grounded context.
+
+### Best fit
+
+Use RAG when the classroom output must stay close to known source material, such as equipment manuals, training documents, safety standards, compliance rules, or school-specific course notes.
+
+## Vocational Procedural-Skill Widgets
+
+The vocational widget module adds a task-engine generation path for hands-on training content. Its main widget type is `procedural-skill`, which models an operational procedure rather than a passive explanation.
+
+### What it does
+
+- Adds a vocational task-engine mode for generating procedural practice scenes.
+- Adds the `procedural-skill` widget type for step-by-step operational training.
+- Captures task metadata such as procedure type, tools, ordered steps, success criteria, and error consequences.
+- Generates learner controls for decisions, measurements, tool use, checks, or state changes.
+- Provides visible feedback, progress, reset behavior, and success criteria tracking.
+- Uses existing platform message contracts for teacher actions and widget state updates.
+
+### Widget behavior
+
+A procedural-skill widget should include:
+
+- a visible task area;
+- tools or materials;
+- ordered steps;
+- learner actions beyond a simple "Done" button;
+- operation proxies such as readings, indicators, inspection states, or threshold checks;
+- consequence feedback for unsafe or incorrect choices;
+- progress and success criteria that only complete when conditions are satisfied;
+- a full reset path that restores learner state;
+- support for existing platform messages such as `SET_WIDGET_STATE`, `HIGHLIGHT_ELEMENT`, `ANNOTATE_ELEMENT`, and `REVEAL_ELEMENT`.
+
+### Best fit
+
+Use vocational widgets for training scenes where learners need to practice a procedure, make operational decisions, or respond to feedback. Examples include equipment inspection, calibration, safety checks, process handoff, maintenance troubleshooting, and lab-operation practice.
+
+## Relationship Between The Two Features
+
+RAG and vocational widgets solve different problems and can remain decoupled:
+
+- RAG provides source-grounded context.
+- Vocational widgets provide procedural interaction.
+- A classroom can use vocational widgets without RAG.
+- A classroom can use RAG without vocational widgets.
+- When both are enabled by implementation, retrieved context can help procedural widgets follow the exact source procedure.
+
+This separation keeps the knowledge-base workflow independent from task-engine UI and widget generation.

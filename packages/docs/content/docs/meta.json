@@ -3,6 +3,7 @@
   "pages": [
     "getting-started",
     "configuration",
+    "rag-vocational-widgets",
     "supported-models",
     "deployment",
     "voxcpm"
