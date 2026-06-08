@@ -228,6 +228,17 @@ For **shorter courses (<10 scenes)**:
 }
 ```
 
+{{#if imageEnabled}}
+{{snippet:image-instructions}}
+{{/if}}
+
+{{#if videoEnabled}}
+{{snippet:video-instructions}}
+{{/if}}
+
+{{#if mediaEnabled}}
+{{snippet:media-safety-guidelines}}
+{{/if}}
 
 ## Output Format
 

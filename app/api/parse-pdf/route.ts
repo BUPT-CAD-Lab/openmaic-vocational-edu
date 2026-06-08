@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server';
 import { parsePDF } from '@/lib/pdf/pdf-providers';
-import { resolvePDFApiKey, resolvePDFBaseUrl } from '@/lib/server/provider-config';
+import {
+  isServerConfiguredProvider,
+  resolvePDFApiKey,
+  resolvePDFBaseUrl,
+} from '@/lib/server/provider-config';
 import type { PDFProviderId } from '@/lib/pdf/types';
 import type { ParsedPdfContent } from '@/lib/types/pdf';
 import { createLogger } from '@/lib/logger';
@@ -37,7 +41,9 @@ export async function POST(req: NextRequest) {
     pdfFileName = pdfFile?.name;
     resolvedProviderId = effectiveProviderId;
 
-    const clientBaseUrl = baseUrl || undefined;
+    // Managed providers are admin-owned: ignore any client-sent key/baseUrl.
+    const managed = isServerConfiguredProvider('pdf', effectiveProviderId);
+    const clientBaseUrl = managed ? undefined : baseUrl || undefined;
     if (clientBaseUrl && process.env.NODE_ENV === 'production') {
       const ssrfError = await validateUrlForSSRF(clientBaseUrl);
       if (ssrfError) {
@@ -47,12 +53,8 @@ export async function POST(req: NextRequest) {
 
     const config = {
       providerId: effectiveProviderId,
-      apiKey: clientBaseUrl
-        ? apiKey || ''
-        : resolvePDFApiKey(effectiveProviderId, apiKey || undefined),
-      baseUrl: clientBaseUrl
-        ? clientBaseUrl
-        : resolvePDFBaseUrl(effectiveProviderId, baseUrl || undefined),
+      apiKey: resolvePDFApiKey(effectiveProviderId, managed ? undefined : apiKey || undefined),
+      baseUrl: resolvePDFBaseUrl(effectiveProviderId, clientBaseUrl),
     };
 
     // Convert PDF to buffer

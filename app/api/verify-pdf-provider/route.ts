@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
 import { createLogger } from '@/lib/logger';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
-import { resolvePDFApiKey, resolvePDFBaseUrl } from '@/lib/server/provider-config';
+import {
+  isServerConfiguredProvider,
+  resolvePDFApiKey,
+  resolvePDFBaseUrl,
+} from '@/lib/server/provider-config';
 import { validateUrlForSSRF } from '@/lib/server/ssrf-guard';
 import { MINERU_CLOUD_DEFAULT_BASE } from '@/lib/pdf/constants';
 
@@ -18,14 +22,12 @@ export async function POST(req: NextRequest) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Provider ID is required');
     }
 
+    // Managed providers are admin-owned: ignore any client-sent key/baseUrl.
+    const managed = isServerConfiguredProvider('pdf', providerId);
+
     // MinerU Cloud: verify by calling the cloud API with the token
     if (providerId === 'mineru-cloud') {
-      const resolvedApiKey = resolvePDFApiKey(providerId, apiKey);
-      if (!resolvedApiKey) {
-        return apiError('MISSING_REQUIRED_FIELD', 400, 'API Key is required for MinerU Cloud');
-      }
-
-      const clientCloudBase = (baseUrl as string | undefined) || undefined;
+      const clientCloudBase = managed ? undefined : (baseUrl as string | undefined) || undefined;
       if (clientCloudBase && process.env.NODE_ENV === 'production') {
         const ssrfError = await validateUrlForSSRF(clientCloudBase);
         if (ssrfError) {
@@ -33,10 +35,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const resolvedApiKey = resolvePDFApiKey(providerId, managed ? undefined : apiKey);
+      if (!resolvedApiKey) {
+        return apiError('MISSING_REQUIRED_FIELD', 400, 'API Key is required for MinerU Cloud');
+      }
+
       const cloudBase = (
-        clientCloudBase ||
-        resolvePDFBaseUrl(providerId) ||
-        MINERU_CLOUD_DEFAULT_BASE
+        resolvePDFBaseUrl(providerId, clientCloudBase) || MINERU_CLOUD_DEFAULT_BASE
       ).replace(/\/+$/, '');
 
       // Probe the batch endpoint with an empty body to verify auth
@@ -66,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Self-hosted providers: verify by connecting to the base URL
-    const clientBaseUrl = (baseUrl as string | undefined) || undefined;
+    const clientBaseUrl = managed ? undefined : (baseUrl as string | undefined) || undefined;
     if (clientBaseUrl && process.env.NODE_ENV === 'production') {
       const ssrfError = await validateUrlForSSRF(clientBaseUrl);
       if (ssrfError) {
@@ -74,14 +79,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const resolvedBaseUrl = clientBaseUrl ? clientBaseUrl : resolvePDFBaseUrl(providerId, baseUrl);
+    const resolvedBaseUrl = resolvePDFBaseUrl(providerId, clientBaseUrl);
     if (!resolvedBaseUrl) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Base URL is required');
     }
 
-    const resolvedApiKey = clientBaseUrl
-      ? (apiKey as string | undefined) || ''
-      : resolvePDFApiKey(providerId, apiKey);
+    const resolvedApiKey = resolvePDFApiKey(providerId, managed ? undefined : apiKey);
 
     const headers: Record<string, string> = {};
     if (resolvedApiKey) {

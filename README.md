@@ -39,6 +39,7 @@
 
 ## 🗞️ News
 
+- **2026-06-02** — [v0.2.2 released!](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.2.2) MAIC Editor (v0) Pro Mode for editing generated slides; editable outline before generation; offline-ready classroom export; new search providers (Brave/Baidu/Bocha/MiniMax) and Azure STT; new models (Claude Opus 4.8, MiniMax M3, Gemini 3.5 Flash); Traditional Chinese (zh-TW) and Brazilian Portuguese (pt-BR) locales. See [changelog](CHANGELOG.md).
 - **2026-04-26** — [v0.2.1 released!](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.2.1) Integrated [VoxCPM2](https://github.com/OpenBMB/VoxCPM) TTS with voice cloning and on-the-fly auto-generated voices; added per-model thinking config; added end-of-course completion page with persistent quiz state; added latest released models including DeepSeek-V4 / GPT-5.5 / GPT-Image-2 / Xiaomi MiMo / Hy3. See [changelog](CHANGELOG.md).
 - **2026-04-20** — **v0.2.0 released!** Deep Interactive Mode — 3D visualization, simulations, games, mind maps, and online programming for hands-on learning. See [features](#-features) for details.
 - **2026-04-14** — [v0.1.1 released!](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.1.1) Automatic language inference, ACCESS_CODE authentication, classroom ZIP export/import, custom TTS/ASR providers, Ollama support, and more. See [changelog](CHANGELOG.md).
@@ -549,12 +550,14 @@ Optional config in `~/.openclaw/openclaw.json`:
 | **Interactive HTML** | Self-contained web pages with interactive simulations |
 | **Classroom ZIP** | Full classroom export (course structure + media) for backup or sharing |
 
+**Offline / intranet classrooms:** When you export a classroom (`.maic.zip`) or a Resource Pack, OpenMAIC inlines the external assets referenced by interactive scenes (KaTeX, Three.js incl. `three/addons`, Tailwind CDN, Google Fonts, images) into the exported HTML as `data:` URIs. The exported course then plays fully offline after import into an air-gapped/intranet instance — no public CDN is contacted at playback time. Assets that can't be fetched at export time (e.g. CORS-restricted image hosts) are reported and left as URLs. Classrooms exported *before* this feature still reference CDNs and must be re-exported to gain offline support.
+
 ### And More
 
 - **Text-to-Speech** — Multiple voice providers with customizable voices
 - **Speech Recognition** — Talk to your AI teacher using your microphone
 - **Web Search** — Agents search the web for up-to-date information during class
-- **i18n** — Interface supports Chinese, English, Japanese, and Russian
+- **i18n** — Interface supports 7 languages: Chinese (Simplified & Traditional), English, Japanese, Russian, Arabic, and Portuguese (Brazil)
 - **Dark Mode** — Easy on the eyes for late-night study sessions
 
 ---
@@ -629,7 +632,7 @@ OpenMAIC/
 │   ├── media/                  #   Image & video generation providers
 │   ├── export/                 #   PPTX & HTML export
 │   ├── hooks/                  #   React custom hooks (55+)
-│   ├── i18n/                   #   Internationalization (zh-CN, en-US)
+│   ├── i18n/                   #   Internationalization (zh-CN, zh-TW, en-US, ja-JP, ru-RU, ar-SA, pt-BR)
 │   └── ...                     #   prosemirror, storage, pdf, web-search, utils
 │
 ├── components/                 # React UI components
@@ -677,7 +680,7 @@ OpenMAIC/
 
 ## 💼 Commercial Licensing
 
-This project is licensed under AGPL-3.0. For commercial licensing inquiries, please contact: **thu_maic@tsinghua.edu.cn**
+This project is licensed under AGPL-3.0. For commercial licensing inquiries, please contact: **thu_maic@mail.tsinghua.edu.cn**
 
 ---
 

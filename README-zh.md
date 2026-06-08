@@ -39,6 +39,7 @@
 
 ## 🗞️ 动态
 
+- **2026-06-02** — [v0.2.2 发布！](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.2.2) MAIC Editor（v0）专业模式，可轻量编辑生成的幻灯片；生成前可编辑大纲；交互课堂离线导出；新增 Brave/百度/博查/MiniMax 搜索与 Azure STT；新增 Claude Opus 4.8 / MiniMax M3 / Gemini 3.5 Flash 等模型；新增繁体中文（zh-TW）与巴西葡萄牙语（pt-BR）。查看[更新日志](CHANGELOG.md)。
 - **2026-04-26** — [v0.2.1 发布！](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.2.1) 接入 [VoxCPM2](https://github.com/OpenBMB/VoxCPM) TTS，支持音色克隆与自动生成音色；新增按模型思考配置；新增课程完成页与作答状态持久化；新增 DeepSeek-V4 / GPT-5.5 / GPT-Image-2 / 小米 MiMo / Hy3 等最新发布的模型。查看[更新日志](CHANGELOG.md)。
 - **2026-04-20** — **v0.2.0 发布！** 深度交互模式 — 3D 可视化、模拟实验、游戏、思维导图、在线编程，动手学习新体验。详见[功能特性](#-功能特性)。
 - **2026-04-14** — [v0.1.1 发布！](https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.1.1) 自动语言推断、ACCESS_CODE 站点认证、课堂 ZIP 导入导出、自定义 TTS/ASR、Ollama 支持等。查看[更新日志](CHANGELOG.md)。
@@ -547,12 +548,14 @@ cp -R /path/to/OpenMAIC/skills/openmaic ~/.openclaw/skills/openmaic
 | **交互式 HTML** | 自包含的网页，包含交互式模拟实验 |
 | **课堂 ZIP** | 完整课堂导出（课程结构 + 媒体文件），可备份或分享 |
 
+**离线 / 内网课堂：** 导出课堂（`.maic.zip`）或资源包时，OpenMAIC 会把互动场景引用的外部资源（KaTeX、Three.js 含 `three/addons`、Tailwind CDN、Google Fonts、图片）以 `data:` URI 形式内联进导出的 HTML。导出的课程在导入到内网/离线实例后即可完全离线播放，播放时不再访问任何公网 CDN。导出时无法抓取的资源（如开启了 CORS 限制的图床）会被记录并保留为原始 URL。本功能上线*之前*导出的课堂仍引用 CDN，需要重新导出才能离线播放。
+
 ### 更多功能
 
 - **语音合成（TTS）** — 多种语音服务商，支持自定义音色
 - **语音识别** — 通过麦克风与 AI 老师对话
 - **网络搜索** — 智能体在课堂中搜索网络获取最新信息
-- **国际化** — 界面支持中文、英文、日文和俄文
+- **国际化** — 界面支持 7 种语言：简体中文、繁体中文、英文、日文、俄文、阿拉伯文、葡萄牙文（巴西）
 - **暗色模式** — 深夜学习更护眼
 
 ---
@@ -627,7 +630,7 @@ OpenMAIC/
 │   ├── media/                  #   图片 & 视频生成服务商
 │   ├── export/                 #   PPTX & HTML 导出
 │   ├── hooks/                  #   React 自定义 Hooks（55+）
-│   ├── i18n/                   #   国际化（zh-CN, en-US）
+│   ├── i18n/                   #   国际化（zh-CN, zh-TW, en-US, ja-JP, ru-RU, ar-SA, pt-BR）
 │   └── ...                     #   prosemirror, storage, pdf, web-search, utils
 │
 ├── components/                 # React UI 组件
@@ -675,7 +678,7 @@ OpenMAIC/
 
 ## 💼 商业合作
 
-本项目基于 AGPL-3.0 协议开源。商业授权合作请联系：**thu_maic@tsinghua.edu.cn**
+本项目基于 AGPL-3.0 协议开源。商业授权合作请联系：**thu_maic@mail.tsinghua.edu.cn**
 
 ---
 
