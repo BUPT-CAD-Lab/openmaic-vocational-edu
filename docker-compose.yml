@@ -11,5 +11,25 @@ services:
       - openmaic-data:/app/data
     restart: unless-stopped
 
+  postgres:
+    image: pgvector/pgvector:pg17
+    profiles:
+      - knowledge
+    environment:
+      POSTGRES_DB: openmaic
+      POSTGRES_USER: openmaic
+      POSTGRES_PASSWORD: openmaic
+    ports:
+      - "5433:5432"
+    volumes:
+      - openmaic-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openmaic -d openmaic"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   openmaic-data:
+  openmaic-postgres-data:

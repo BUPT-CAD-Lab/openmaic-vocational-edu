@@ -7,6 +7,7 @@ import {
   getServerVideoProviders,
   getServerWebSearchProviders,
 } from '@/lib/server/provider-config';
+import { getKnowledgeBackendStatus } from '@/lib/server/knowledge/config';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { createLogger } from '@/lib/logger';
 
@@ -22,6 +23,7 @@ export async function GET() {
       image: getServerImageProviders(),
       video: getServerVideoProviders(),
       webSearch: getServerWebSearchProviders(),
+      knowledgeBase: getKnowledgeBackendStatus(),
     });
   } catch (error) {
     log.error('Error fetching server providers:', error);

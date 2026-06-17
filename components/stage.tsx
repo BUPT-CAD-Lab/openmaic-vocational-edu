@@ -15,6 +15,7 @@ import { MultiTabEditConflictPrompt } from '@/components/edit/MultiTabEditConfli
 import { InteractiveIframeHost } from '@/components/scene-renderers/InteractiveIframeHost';
 import { CHROME_EASE } from '@/lib/edit/transitions';
 import { preloadEditor } from '@/lib/edit/preload-editor';
+import { ClassroomRagEvidenceDock } from '@/components/knowledge/classroom-rag-evidence-dock';
 
 /**
  * Stage — top-level classroom container. Dispatches between the two
@@ -37,6 +38,8 @@ export function Stage({
 }) {
   const { mode, setMode, scenes, currentSceneId, generatingOutlines, stage } = useStageStore();
   const currentScene = useStageStore((s) => s.getCurrentScene());
+  const ragSnapshotId = stage?.ragSnapshotId;
+  const evidenceTitle = currentScene?.title ?? stage?.name ?? '当前课堂';
 
   // Predicate for "can the user enter Pro mode for the current scene?".
   // Single source of truth feeds the Header's Pro Switch state and the
@@ -120,40 +123,45 @@ export function Stage({
   // pure fade keeps layout static so the shared elements land precisely.
   return (
     <div className="relative flex flex-1 overflow-hidden">
-      <AnimatePresence initial={false}>
-        {mode === 'edit' && currentScene ? (
-          <motion.div
-            key="edit"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.28, ease: CHROME_EASE }}
-            className="absolute inset-0 flex"
-          >
-            <EditChromeRoot
-              scene={currentScene}
-              isEditable={isEditable}
-              onToggleEditMode={toggleHandler}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="playback"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.28, ease: CHROME_EASE }}
-            className="absolute inset-0 flex"
-          >
-            <PlaybackChromeRoot
-              ref={playbackRef}
-              onRetryOutline={onRetryOutline}
-              canEnterProMode={isEditable}
-              onEnterProMode={toggleHandler}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        <AnimatePresence initial={false}>
+          {mode === 'edit' && currentScene ? (
+            <motion.div
+              key="edit"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: CHROME_EASE }}
+              className="absolute inset-0 flex"
+            >
+              <EditChromeRoot
+                scene={currentScene}
+                isEditable={isEditable}
+                onToggleEditMode={toggleHandler}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="playback"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: CHROME_EASE }}
+              className="absolute inset-0 flex"
+            >
+              <PlaybackChromeRoot
+                ref={playbackRef}
+                onRetryOutline={onRetryOutline}
+                canEnterProMode={isEditable}
+                onEnterProMode={toggleHandler}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      {ragSnapshotId && mode !== 'edit' && (
+        <ClassroomRagEvidenceDock snapshotId={ragSnapshotId} sceneTitle={evidenceTitle} />
+      )}
       <MultiTabEditConflictPrompt
         open={editLock.conflictOpen}
         onDismiss={editLock.dismissConflict}

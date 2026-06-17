@@ -283,6 +283,15 @@ async function parseWithMinerU(
   config: PDFParserConfig,
   pdfBuffer: Buffer,
 ): Promise<ParsedPdfContent> {
+  return parseWithMinerUDocument(config, pdfBuffer, 'document.pdf', 'application/pdf');
+}
+
+export async function parseWithMinerUDocument(
+  config: Pick<PDFParserConfig, 'apiKey' | 'baseUrl'>,
+  documentBuffer: Buffer,
+  fileName: string,
+  mimeType: string,
+): Promise<ParsedPdfContent> {
   if (!config.baseUrl) {
     throw new Error(
       'MinerU base URL is required. ' +
@@ -291,20 +300,18 @@ async function parseWithMinerU(
     );
   }
 
-  log.info('[MinerU] Parsing PDF with MinerU server:', config.baseUrl);
-
-  const fileName = 'document.pdf';
+  log.info('[MinerU] Parsing document with MinerU server:', config.baseUrl);
 
   // Create FormData for file upload
   const formData = new FormData();
 
   // Convert Buffer to Blob
-  const arrayBuffer = pdfBuffer.buffer.slice(
-    pdfBuffer.byteOffset,
-    pdfBuffer.byteOffset + pdfBuffer.byteLength,
+  const arrayBuffer = documentBuffer.buffer.slice(
+    documentBuffer.byteOffset,
+    documentBuffer.byteOffset + documentBuffer.byteLength,
   );
   const blob = new Blob([arrayBuffer as ArrayBuffer], {
-    type: 'application/pdf',
+    type: mimeType,
   });
   formData.append('files', blob, fileName);
 

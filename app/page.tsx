@@ -56,18 +56,21 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDraftCache } from '@/lib/hooks/use-draft-cache';
 import { SpeechButton } from '@/components/audio/speech-button';
 import { useImportClassroom } from '@/lib/import/use-import-classroom';
+import { readStoredRagRetrievalConfig } from '@/lib/rag/config';
 
 const log = createLogger('Home');
 
 const WEB_SEARCH_STORAGE_KEY = 'webSearchEnabled';
 const RECENT_OPEN_STORAGE_KEY = 'recentClassroomsOpen';
 const INTERACTIVE_MODE_STORAGE_KEY = 'interactiveModeEnabled';
+const LOCAL_KNOWLEDGE_STORAGE_KEY = 'localKnowledgeEnabled';
 
 interface FormState {
   pdfFile: File | null;
   requirement: string;
   webSearch: boolean;
   interactiveMode: boolean;
+  localKnowledge: boolean;
 }
 
 const initialFormState: FormState = {
@@ -75,6 +78,7 @@ const initialFormState: FormState = {
   requirement: '',
   webSearch: false,
   interactiveMode: false,
+  localKnowledge: false,
 };
 
 function HomePage() {
@@ -96,6 +100,8 @@ function HomePage() {
   // instead of inspecting modelId directly.
   const providersConfig = useSettingsStore((s) => s.providersConfig);
   const hasUsableProvider = hasUsableLLMProvider(providersConfig);
+  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(false);
+  const [knowledgeBaseReady, setKnowledgeBaseReady] = useState(false);
   const [recentOpen, setRecentOpen] = useState(true);
   const persistRecentOpen = (next: boolean) => {
     setRecentOpen(next);
@@ -129,6 +135,40 @@ function HomePage() {
     }
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/server-providers')
+      .then((response) => response.json())
+      .then((payload) => {
+        const enabled = !!payload?.knowledgeBase?.enabled;
+        const ready = !!payload?.knowledgeBase?.ready;
+        if (cancelled) return;
+        setKnowledgeBaseEnabled(enabled);
+        setKnowledgeBaseReady(ready);
+        if (ready) {
+          try {
+            const savedLocalKnowledge = localStorage.getItem(LOCAL_KNOWLEDGE_STORAGE_KEY);
+            if (savedLocalKnowledge === 'true') {
+              setForm((prev) => ({ ...prev, localKnowledge: true }));
+            }
+          } catch {
+            /* localStorage unavailable */
+          }
+        } else {
+          setForm((prev) => (prev.localKnowledge ? { ...prev, localKnowledge: false } : prev));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setKnowledgeBaseEnabled(false);
+          setKnowledgeBaseReady(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Restore requirement draft from localStorage on mount. The previous derived-state
   // pattern initialised `prev` from the cached value itself, so on the first client
@@ -257,6 +297,8 @@ function HomePage() {
       if (field === 'webSearch') localStorage.setItem(WEB_SEARCH_STORAGE_KEY, String(value));
       if (field === 'interactiveMode')
         localStorage.setItem(INTERACTIVE_MODE_STORAGE_KEY, String(value));
+      if (field === 'localKnowledge')
+        localStorage.setItem(LOCAL_KNOWLEDGE_STORAGE_KEY, String(value));
       if (field === 'requirement') updateRequirementCache(value as string);
     } catch {
       /* ignore */
@@ -283,6 +325,11 @@ function HomePage() {
         userBio: userProfile.bio || undefined,
         webSearch: form.webSearch || undefined,
         interactiveMode: form.interactiveMode,
+        localKnowledge: knowledgeBaseReady && form.localKnowledge ? true : undefined,
+        ragConfig:
+          knowledgeBaseReady && form.localKnowledge
+            ? readStoredRagRetrievalConfig(localStorage)
+            : undefined,
       };
 
       let pdfStorageKey: string | undefined;
@@ -528,6 +575,10 @@ function HomePage() {
                 <GenerationToolbar
                   webSearch={form.webSearch}
                   onWebSearchChange={(v) => updateForm('webSearch', v)}
+                  localKnowledgeEnabled={knowledgeBaseEnabled}
+                  localKnowledgeAvailable={knowledgeBaseReady}
+                  localKnowledge={form.localKnowledge}
+                  onLocalKnowledgeChange={(v) => updateForm('localKnowledge', v)}
                   onSettingsOpen={(section) => {
                     setSettingsSection(section);
                     setSettingsOpen(true);

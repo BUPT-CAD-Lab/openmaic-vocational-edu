@@ -1,4 +1,4 @@
-import { parsePDF } from '@/lib/pdf/pdf-providers';
+import { parsePDF, parseWithMinerUDocument } from '@/lib/pdf/pdf-providers';
 import { PDF_PROVIDERS } from '@/lib/pdf/constants';
 import type { PDFProviderConfig, PDFProviderId } from '@/lib/pdf/types';
 import { parsedPdfToDocumentArtifact } from '../pdf-compat';
@@ -9,6 +9,11 @@ import type {
 } from '../types';
 
 const PDF_MIME_TYPES = ['application/pdf'];
+const MINERU_DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
 
 function capabilitiesFromPdfProvider(
   provider: PDFProviderConfig,
@@ -32,17 +37,28 @@ function createPdfBackedDocumentExtractor(id: PDFProviderId): DocumentExtractorP
   return {
     id,
     displayName: pdfProvider.name,
-    supportedMimeTypes: PDF_MIME_TYPES,
+    supportedMimeTypes: id === 'mineru' ? MINERU_DOCUMENT_MIME_TYPES : PDF_MIME_TYPES,
     capabilities: capabilitiesFromPdfProvider(pdfProvider, id),
     async extract(input: DocumentExtractorInput) {
-      const parsed = await parsePDF(
-        {
-          providerId: id,
-          apiKey: input.config.apiKey,
-          baseUrl: input.config.baseUrl,
-        },
-        input.buffer,
-      );
+      const parsed =
+        id === 'mineru' && input.mimeType !== 'application/pdf'
+          ? await parseWithMinerUDocument(
+              {
+                apiKey: input.config.apiKey,
+                baseUrl: input.config.baseUrl,
+              },
+              input.buffer,
+              input.fileName ?? 'document',
+              input.mimeType,
+            )
+          : await parsePDF(
+              {
+                providerId: id,
+                apiKey: input.config.apiKey,
+                baseUrl: input.config.baseUrl,
+              },
+              input.buffer,
+            );
 
       return parsedPdfToDocumentArtifact(parsed, input);
     },
