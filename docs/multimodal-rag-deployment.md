@@ -95,7 +95,7 @@ If you use a separately maintained MinerU deployment directory, start its API
 service first. Example:
 
 ```bash
-cd /mnt/hpfs/xiangc/mxy/mineru-deploy
+cd mineru-deploy
 docker compose -f compose.yaml --profile api up -d
 ```
 
@@ -126,7 +126,7 @@ Download the model:
 
 ```bash
 huggingface-cli download jinaai/jina-clip-v2 \
-  --local-dir /mnt/hpfs/xiangc/llms/jina-clip-v2
+  --local-dir llms/jina-clip-v2
 ```
 
 Install Python dependencies in your preferred environment:
@@ -139,7 +139,7 @@ Start the local OpenAI-compatible helper server included in this branch:
 
 ```bash
 python scripts/serve-jina-clip-v2.py \
-  --model-path /mnt/hpfs/xiangc/llms/jina-clip-v2 \
+  --model-path llms/jina-clip-v2 \
   --host 0.0.0.0 \
   --port 8300
 ```
